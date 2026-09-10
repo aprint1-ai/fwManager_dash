@@ -40,7 +40,7 @@ const INITIAL_COMPANIES = ['푸드윈', '파인쿡', '에이프린트', '코리�
 
 // 기본 지표 목록
 const INITIAL_ROWS = [
-  { id: 'revenue', name: '매출', calcType: '+', isPercentage: false, isBuiltIn: true },
+  { id: 'revenue', name: '매출액', calcType: '+', isPercentage: false, isBuiltIn: true },
   { id: 'op_profit', name: '영업이익', calcType: '+', isPercentage: false, isBuiltIn: true },
   { id: 'op_margin', name: '영업이익률', calcType: 'calc', isPercentage: true, isBuiltIn: true },
 ];
@@ -121,7 +121,10 @@ export default function App() {
         const data = docSnap.data();
         if (data.matrixData) setMatrixData(data.matrixData);
         if (data.companies) setCompanies(data.companies);
-        if (data.rows) setRows(data.rows);
+        if (data.rows) {
+          const sanitizedRows = data.rows.map((r) => (r.id === 'revenue' ? { ...r, name: '매출액' } : r));
+          setRows(sanitizedRows);
+        }
         if (data.companyMemos) setCompanyMemos(data.companyMemos);
         setSyncStatus('클라우드 연결됨');
       } else {
