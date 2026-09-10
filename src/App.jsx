@@ -316,12 +316,12 @@ export default function App() {
     }
   };
 
-  // 연산 유틸
+  // 연산 유틸 (영업이익률: 영업이익 ÷ 매출액 × 100, 소수점 1자리)
   const getMonthlyMargin = (year, comp, month) => {
     const mData = matrixData?.[year]?.[comp]?.[month] || {};
     const rev = mData['revenue'] || 0;
     const profit = mData['op_profit'] || 0;
-    if (!rev || rev === 0) return 0;
+    if (!rev || rev === 0) return '0.0';
     return ((profit / rev) * 100).toFixed(1);
   };
 
@@ -344,8 +344,22 @@ export default function App() {
   const getYearlyMarginSum = (year, comp) => {
     const revSum = getYearlySum(year, comp, 'revenue');
     const profitSum = getYearlySum(year, comp, 'op_profit');
-    if (!revSum || revSum === 0) return 0;
+    if (!revSum || revSum === 0) return '0.0';
     return ((profitSum / revSum) * 100).toFixed(1);
+  };
+
+  const getGroupYearlyMarginSum = (year) => {
+    const totalRev = companies.reduce((acc, c) => acc + getYearlySum(year, c, 'revenue'), 0);
+    const totalProfit = companies.reduce((acc, c) => acc + getYearlySum(year, c, 'op_profit'), 0);
+    if (!totalRev || totalRev === 0) return '0.0';
+    return ((totalProfit / totalRev) * 100).toFixed(1);
+  };
+
+  const getGroupMonthlyMarginSum = (year, month) => {
+    const totalRev = companies.reduce((acc, c) => acc + (matrixData?.[year]?.[c]?.[month]?.['revenue'] || 0), 0);
+    const totalProfit = companies.reduce((acc, c) => acc + (matrixData?.[year]?.[c]?.[month]?.['op_profit'] || 0), 0);
+    if (!totalRev || totalRev === 0) return '0.0';
+    return ((totalProfit / totalRev) * 100).toFixed(1);
   };
 
   return (
@@ -515,7 +529,7 @@ export default function App() {
                                 </td>
                               ))}
                               <td className="py-4 px-5 text-right tabular-nums font-black text-slate-900 bg-[#e2ebf3] text-base whitespace-nowrap min-w-[160px] border-l border-slate-300">
-                                -
+                                {getGroupYearlyMarginSum(selectedYear)}%
                               </td>
                             </tr>
                           );
@@ -608,7 +622,7 @@ export default function App() {
                                 </td>
                               ))}
                               <td className="py-4 px-5 text-right tabular-nums font-black text-slate-900 bg-[#e2ebf3] text-base whitespace-nowrap min-w-[160px] border-l border-slate-300">
-                                -
+                                {getGroupMonthlyMarginSum(selectedYear, selectedMonth)}%
                               </td>
                             </tr>
                           );
