@@ -483,8 +483,13 @@ export default function App() {
                     <thead>
                       <tr className="bg-[#1b587d] text-white text-base font-black whitespace-nowrap">
                         <th className="py-4 px-5 w-48 border-r border-sky-800 whitespace-nowrap">구분</th>
-                        {companies.map((comp) => (
-                          <th key={comp} className="py-4 px-5 border-r border-sky-800 text-center whitespace-nowrap min-w-[140px]">
+                        {companies.map((comp, idx) => (
+                          <th
+                            key={comp}
+                            className={`py-4 px-5 border-r border-sky-800 text-center whitespace-nowrap min-w-[140px] ${
+                              idx % 2 === 1 ? 'bg-[#164a6a]' : ''
+                            }`}
+                          >
                             {comp}
                           </th>
                         ))}
@@ -495,16 +500,23 @@ export default function App() {
                       {rows.map((row) => {
                         if (row.isPercentage) {
                           return (
-                            <tr key={row.id} className="bg-sky-50/70 font-black text-base hover:bg-sky-100/50 transition whitespace-nowrap">
-                              <td className="py-4 px-5 font-black text-slate-900 border-r border-slate-200 whitespace-nowrap">
+                            <tr key={row.id} className="font-black text-base hover:bg-slate-100/50 transition whitespace-nowrap">
+                              <td className="py-4 px-5 font-black text-slate-900 border-r border-slate-200 whitespace-nowrap bg-white">
                                 {row.name}
                               </td>
-                              {companies.map((comp) => (
-                                <td key={comp} className="py-4 px-5 text-right border-r border-slate-200 tabular-nums font-black text-black text-base whitespace-nowrap min-w-[140px]">
+                              {companies.map((comp, idx) => (
+                                <td
+                                  key={comp}
+                                  className={`py-4 px-5 text-right border-r border-slate-200 tabular-nums font-black text-black text-base whitespace-nowrap min-w-[140px] ${
+                                    idx % 2 === 1 ? 'bg-slate-100/80' : 'bg-white'
+                                  }`}
+                                >
                                   {getYearlyMarginSum(selectedYear, comp)}%
                                 </td>
                               ))}
-                              <td className="py-4 px-5 text-right tabular-nums font-black text-sky-950 bg-sky-100 text-base whitespace-nowrap min-w-[160px]">-</td>
+                              <td className="py-4 px-5 text-right tabular-nums font-black text-slate-900 bg-[#e2ebf3] text-base whitespace-nowrap min-w-[160px] border-l border-slate-300">
+                                -
+                              </td>
                             </tr>
                           );
                         }
@@ -513,16 +525,21 @@ export default function App() {
                         const totalSum = compValues.reduce((a, b) => a + b, 0);
 
                         return (
-                          <tr key={row.id} className="hover:bg-slate-50 transition text-base whitespace-nowrap">
-                            <td className="py-4 px-5 font-bold text-slate-900 border-r border-slate-200 whitespace-nowrap">
+                          <tr key={row.id} className="hover:bg-slate-100/50 transition text-base whitespace-nowrap">
+                            <td className="py-4 px-5 font-bold text-slate-900 border-r border-slate-200 whitespace-nowrap bg-white">
                               {row.name}
                             </td>
-                            {companies.map((comp) => (
-                              <td key={comp} className="py-4 px-5 text-right border-r border-slate-200 tabular-nums font-bold text-black text-base whitespace-nowrap min-w-[140px]">
+                            {companies.map((comp, idx) => (
+                              <td
+                                key={comp}
+                                className={`py-4 px-5 text-right border-r border-slate-200 tabular-nums font-bold text-black text-base whitespace-nowrap min-w-[140px] ${
+                                  idx % 2 === 1 ? 'bg-slate-100/80' : 'bg-white'
+                                }`}
+                              >
                                 {getYearlySum(selectedYear, comp, row.id).toLocaleString()}
                               </td>
                             ))}
-                            <td className="py-4 px-5 text-right tabular-nums font-black text-black bg-slate-100 text-lg border-l border-slate-300 whitespace-nowrap min-w-[160px]">
+                            <td className="py-4 px-5 text-right tabular-nums font-black text-slate-900 bg-[#e2ebf3] text-lg border-l border-slate-300 whitespace-nowrap min-w-[160px]">
                               {totalSum.toLocaleString()}
                             </td>
                           </tr>
@@ -559,8 +576,13 @@ export default function App() {
                     <thead>
                       <tr className="bg-[#1b587d] text-white text-base font-black whitespace-nowrap">
                         <th className="py-4 px-5 w-48 border-r border-sky-800 whitespace-nowrap">구분</th>
-                        {companies.map((comp) => (
-                          <th key={comp} className="py-4 px-5 border-r border-sky-800 text-center whitespace-nowrap min-w-[140px]">
+                        {companies.map((comp, idx) => (
+                          <th
+                            key={comp}
+                            className={`py-4 px-5 border-r border-sky-800 text-center whitespace-nowrap min-w-[140px] ${
+                              idx % 2 === 1 ? 'bg-[#164a6a]' : ''
+                            }`}
+                          >
                             {comp}
                           </th>
                         ))}
@@ -571,16 +593,23 @@ export default function App() {
                       {rows.map((row) => {
                         if (row.isPercentage) {
                           return (
-                            <tr key={row.id} className="bg-sky-50/70 font-black text-base hover:bg-sky-100/50 transition whitespace-nowrap">
-                              <td className="py-4 px-5 font-black text-slate-900 border-r border-slate-200 whitespace-nowrap">
+                            <tr key={row.id} className="font-black text-base hover:bg-slate-100/50 transition whitespace-nowrap">
+                              <td className="py-4 px-5 font-black text-slate-900 border-r border-slate-200 whitespace-nowrap bg-white">
                                 {row.name}
                               </td>
-                              {companies.map((comp) => (
-                                <td key={comp} className="py-4 px-5 text-right border-r border-slate-200 tabular-nums font-black text-black text-base whitespace-nowrap min-w-[140px]">
+                              {companies.map((comp, idx) => (
+                                <td
+                                  key={comp}
+                                  className={`py-4 px-5 text-right border-r border-slate-200 tabular-nums font-black text-black text-base whitespace-nowrap min-w-[140px] ${
+                                    idx % 2 === 1 ? 'bg-slate-100/80' : 'bg-white'
+                                  }`}
+                                >
                                   {getMonthlyMargin(selectedYear, comp, selectedMonth)}%
                                 </td>
                               ))}
-                              <td className="py-4 px-5 text-right tabular-nums font-black text-sky-950 bg-sky-100 text-base whitespace-nowrap min-w-[160px]">-</td>
+                              <td className="py-4 px-5 text-right tabular-nums font-black text-slate-900 bg-[#e2ebf3] text-base whitespace-nowrap min-w-[160px] border-l border-slate-300">
+                                -
+                              </td>
                             </tr>
                           );
                         }
@@ -589,19 +618,24 @@ export default function App() {
                         const monthTotalSum = monthCompValues.reduce((a, b) => a + b, 0);
 
                         return (
-                          <tr key={row.id} className="hover:bg-slate-50 transition text-base whitespace-nowrap">
-                            <td className="py-4 px-5 font-bold text-slate-900 border-r border-slate-200 whitespace-nowrap">
+                          <tr key={row.id} className="hover:bg-slate-100/50 transition text-base whitespace-nowrap">
+                            <td className="py-4 px-5 font-bold text-slate-900 border-r border-slate-200 whitespace-nowrap bg-white">
                               {row.name}
                             </td>
-                            {companies.map((comp) => {
+                            {companies.map((comp, idx) => {
                               const val = matrixData?.[selectedYear]?.[comp]?.[selectedMonth]?.[row.id] || 0;
                               return (
-                                <td key={comp} className="py-4 px-5 text-right border-r border-slate-200 tabular-nums font-bold text-black text-base whitespace-nowrap min-w-[140px]">
+                                <td
+                                  key={comp}
+                                  className={`py-4 px-5 text-right border-r border-slate-200 tabular-nums font-bold text-black text-base whitespace-nowrap min-w-[140px] ${
+                                    idx % 2 === 1 ? 'bg-slate-100/80' : 'bg-white'
+                                  }`}
+                                >
                                   {val.toLocaleString()}
                                 </td>
                               );
                             })}
-                            <td className="py-4 px-5 text-right tabular-nums font-black text-black bg-slate-100 text-lg border-l border-slate-300 whitespace-nowrap min-w-[160px]">
+                            <td className="py-4 px-5 text-right tabular-nums font-black text-slate-900 bg-[#e2ebf3] text-lg border-l border-slate-300 whitespace-nowrap min-w-[160px]">
                               {monthTotalSum.toLocaleString()}
                             </td>
                           </tr>
@@ -612,7 +646,7 @@ export default function App() {
                 </div>
               </section>
 
-              {/* 3. 매출 상세 분석 파트 */}
+              {/* 3. 매출 상세 분석 파트 (4열 종대 카드 레이아웃) */}
               <section className="space-y-6 pt-4">
                 <div className="flex items-center justify-between border-b border-slate-200 pb-3">
                   <h2 className="text-2xl font-black text-slate-900 border-b-2 border-slate-900 pb-1">
@@ -624,7 +658,7 @@ export default function App() {
                   푸드윈 홀딩스 그룹
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                   {companies.map((comp) => {
                     const prevYear = selectedYear - 1;
 
@@ -640,27 +674,27 @@ export default function App() {
                     const isPositive = Number(growthRate) >= 0;
 
                     return (
-                      <div key={comp} className="bg-white rounded-3xl p-7 border border-slate-200 shadow-sm space-y-6 flex flex-col justify-between">
+                      <div key={comp} className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-5 flex flex-col justify-between">
                         {/* 카드 제목 */}
                         <div className="border-b border-slate-100 pb-3">
-                          <h3 className="text-xl font-black text-slate-900">{comp}</h3>
+                          <h3 className="text-lg font-black text-slate-900">{comp}</h3>
                         </div>
 
                         {/* 당월 매출 비교 */}
-                        <div className="bg-slate-50/80 p-5 rounded-2xl border border-slate-200 space-y-4">
-                          <span className="inline-block bg-white text-slate-600 border border-slate-300 text-xs font-black px-3 py-1 rounded-md shadow-xs">
+                        <div className="bg-slate-50/80 p-4 rounded-2xl border border-slate-200 space-y-3">
+                          <span className="inline-block bg-white text-slate-600 border border-slate-300 text-xs font-black px-2.5 py-1 rounded-md shadow-xs">
                             {selectedMonth}월 당월 매출
                           </span>
-                          <div className="space-y-2 text-base">
+                          <div className="space-y-1.5 text-sm">
                             <div className="flex items-center justify-between text-slate-700">
                               <span className="font-bold">작년 당월</span>
-                              <span className="tabular-nums font-bold text-black text-lg whitespace-nowrap">
+                              <span className="tabular-nums font-bold text-black text-base whitespace-nowrap">
                                 {lastYearMonthRev.toLocaleString()}
                               </span>
                             </div>
-                            <div className="flex items-center justify-between font-black text-lg">
+                            <div className="flex items-center justify-between font-black text-base">
                               <span className="text-slate-900">올해 당월</span>
-                              <span className="tabular-nums font-black text-blue-700 text-2xl whitespace-nowrap">
+                              <span className="tabular-nums font-black text-blue-700 text-xl whitespace-nowrap">
                                 {thisYearMonthRev.toLocaleString()}
                               </span>
                             </div>
@@ -668,26 +702,26 @@ export default function App() {
                         </div>
 
                         {/* 누적 매출 비교 */}
-                        <div className="bg-slate-50/80 p-5 rounded-2xl border border-slate-200 space-y-4">
-                          <span className="inline-block bg-white text-slate-600 border border-slate-300 text-xs font-black px-3 py-1 rounded-md shadow-xs">
+                        <div className="bg-slate-50/80 p-4 rounded-2xl border border-slate-200 space-y-3">
+                          <span className="inline-block bg-white text-slate-600 border border-slate-300 text-xs font-black px-2.5 py-1 rounded-md shadow-xs">
                             1~{selectedMonth}월 누적 매출
                           </span>
-                          <div className="space-y-2.5 text-base">
+                          <div className="space-y-2 text-sm">
                             <div className="flex items-center justify-between text-slate-700">
                               <span className="font-bold">작년 누적</span>
-                              <span className="tabular-nums font-bold text-black text-lg whitespace-nowrap">
+                              <span className="tabular-nums font-bold text-black text-base whitespace-nowrap">
                                 {lastYearYTDRev.toLocaleString()}
                               </span>
                             </div>
-                            <div className="flex items-center justify-between font-black text-lg">
+                            <div className="flex items-center justify-between font-black text-base">
                               <span className="text-slate-900">올해 누적</span>
-                              <span className="tabular-nums font-black text-indigo-700 text-2xl whitespace-nowrap">
+                              <span className="tabular-nums font-black text-indigo-700 text-xl whitespace-nowrap">
                                 {thisYearYTDRev.toLocaleString()}
                               </span>
                             </div>
-                            <div className="flex items-center justify-between pt-3 border-t border-slate-200 text-sm font-bold">
-                              <span className="text-slate-500">성장률 (누적기준)</span>
-                              <span className={`tabular-nums text-base font-black flex items-center gap-1 whitespace-nowrap ${isPositive ? 'text-rose-600' : 'text-blue-600'}`}>
+                            <div className="flex items-center justify-between pt-2.5 border-t border-slate-200 text-xs font-bold">
+                              <span className="text-slate-500">성장률 (누적)</span>
+                              <span className={`tabular-nums text-sm font-black flex items-center gap-1 whitespace-nowrap ${isPositive ? 'text-rose-600' : 'text-blue-600'}`}>
                                 {isPositive ? `▲ ${growthRate}%` : `▼ ${Math.abs(growthRate)}%`}
                               </span>
                             </div>
@@ -695,18 +729,18 @@ export default function App() {
                         </div>
 
                         {/* 업체 동향 메모 */}
-                        <div className="space-y-2 pt-1">
+                        <div className="space-y-1.5 pt-1">
                           <div className="flex items-center gap-1.5 text-xs font-black text-slate-500">
-                            <Pencil size={14} />
+                            <Pencil size={13} />
                             <span>업체 동향 메모</span>
                           </div>
-                          <div className="bg-slate-50 border border-slate-300 rounded-xl p-3">
+                          <div className="bg-slate-50 border border-slate-300 rounded-xl p-2.5">
                             <textarea
                               rows={2}
                               value={companyMemos[comp] || ''}
                               onChange={(e) => handleMemoChange(comp, e.target.value)}
                               placeholder="동향 및 관련 이슈 메모를 입력하세요..."
-                              className="w-full bg-transparent text-sm font-bold text-slate-800 resize-none focus:outline-none"
+                              className="w-full bg-transparent text-xs font-bold text-slate-800 resize-none focus:outline-none"
                             />
                           </div>
                         </div>
