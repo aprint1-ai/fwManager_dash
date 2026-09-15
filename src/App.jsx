@@ -334,6 +334,16 @@ export default function App() {
   // 연산 유틸리티 함수 (수입, 지출합계, 손익, 손익률)
   // -------------------------------------------------------------
 
+  // 소수점 2자리 절사(반올림 없이 버림) 포맷터
+  const formatMargin = (val) => {
+    if (!val || isNaN(val) || !isFinite(val)) return '0.00';
+    const factor = 100;
+    const isNegative = val < 0;
+    const absVal = Math.abs(val);
+    const truncated = Math.floor(absVal * factor) / factor;
+    return (isNegative ? -truncated : truncated).toFixed(2);
+  };
+
   // 1. 월별 수입
   const getMonthlyIncome = (year, comp, month) => {
     const mData = matrixData?.[year]?.[comp]?.[month] || {};
@@ -356,12 +366,12 @@ export default function App() {
     return inc - exp;
   };
 
-  // 4. 월별 손익률 ((손익 ÷ 수입) × 100)
+  // 4. 월별 손익률 ((손익 ÷ 수입) × 100, 소수점 2자리 버림)
   const getMonthlyMargin = (year, comp, month) => {
     const inc = getMonthlyIncome(year, comp, month);
     const profit = getMonthlyProfit(year, comp, month);
-    if (!inc || inc === 0) return '0.0';
-    return ((profit / inc) * 100).toFixed(1);
+    if (!inc || inc === 0) return '0.00';
+    return formatMargin((profit / inc) * 100);
   };
 
   // 5. 회사별 연간 수입 합계
@@ -387,12 +397,12 @@ export default function App() {
     return getYearlyIncome(year, comp) - getYearlyExpense(year, comp);
   };
 
-  // 8. 회사별 연간 손익률 ((손익 ÷ 수입) × 100)
+  // 8. 회사별 연간 손익률 ((손익 ÷ 수입) × 100, 소수점 2자리 버림)
   const getYearlyMarginSum = (year, comp) => {
     const incSum = getYearlyIncome(year, comp);
     const profitSum = getYearlyProfit(year, comp);
-    if (!incSum || incSum === 0) return '0.0';
-    return ((profitSum / incSum) * 100).toFixed(1);
+    if (!incSum || incSum === 0) return '0.00';
+    return formatMargin((profitSum / incSum) * 100);
   };
 
   // 9. 전체 그룹 연간 수입 합계
@@ -410,12 +420,12 @@ export default function App() {
     return getGroupYearlyIncome(year) - getGroupYearlyExpense(year);
   };
 
-  // 12. 전체 그룹 연간 손익률 ((전체 손익 ÷ 전체 수입) × 100)
+  // 12. 전체 그룹 연간 손익률 ((전체 손익 ÷ 전체 수입) × 100, 소수점 2자리 버림)
   const getGroupYearlyMarginSum = (year) => {
     const totalInc = getGroupYearlyIncome(year);
     const totalProfit = getGroupYearlyProfit(year);
-    if (!totalInc || totalInc === 0) return '0.0';
-    return ((totalProfit / totalInc) * 100).toFixed(1);
+    if (!totalInc || totalInc === 0) return '0.00';
+    return formatMargin((totalProfit / totalInc) * 100);
   };
 
   // 13. 전체 그룹 월별 수입/지출/손익/손익률
@@ -434,8 +444,8 @@ export default function App() {
   const getGroupMonthlyMarginSum = (year, month) => {
     const totalInc = getGroupMonthlyIncome(year, month);
     const totalProfit = getGroupMonthlyProfit(year, month);
-    if (!totalInc || totalInc === 0) return '0.0';
-    return ((totalProfit / totalInc) * 100).toFixed(1);
+    if (!totalInc || totalInc === 0) return '0.00';
+    return formatMargin((totalProfit / totalInc) * 100);
   };
 
   // 14. 일반 행 연간 합계
