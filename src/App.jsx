@@ -624,19 +624,33 @@ export default function App() {
                               <td className="py-4 px-5 font-black text-slate-900 border-r border-slate-200 whitespace-nowrap bg-amber-50/30">
                                 {row.name}
                               </td>
-                              {companies.map((comp, idx) => (
-                                <td
-                                  key={comp}
-                                  className={`py-4 px-5 text-right border-r border-slate-200 tabular-nums font-black text-black text-base whitespace-nowrap min-w-[140px] ${
-                                    idx % 2 === 1 ? 'bg-slate-100/80' : 'bg-white'
-                                  }`}
-                                >
-                                  {getYearlyMarginSum(selectedYear, comp)}%
-                                </td>
-                              ))}
-                              <td className="py-4 px-5 text-right tabular-nums font-black text-slate-900 bg-[#e2ebf3] text-base whitespace-nowrap min-w-[160px] border-l border-slate-300">
-                                {getGroupYearlyMarginSum(selectedYear)}%
-                              </td>
+                              {companies.map((comp, idx) => {
+                                const marginVal = getYearlyMarginSum(selectedYear, comp);
+                                const isNeg = Number(marginVal) < 0;
+                                return (
+                                  <td
+                                    key={comp}
+                                    className={`py-4 px-5 text-right border-r border-slate-200 tabular-nums font-black text-base whitespace-nowrap min-w-[140px] ${
+                                      idx % 2 === 1 ? 'bg-slate-100/80' : 'bg-white'
+                                    }`}
+                                  >
+                                    <span className={isNeg ? 'text-blue-600' : 'text-rose-600'}>
+                                      {marginVal}%
+                                    </span>
+                                  </td>
+                                );
+                              })}
+                              {(() => {
+                                const groupMargin = getGroupYearlyMarginSum(selectedYear);
+                                const isNeg = Number(groupMargin) < 0;
+                                return (
+                                  <td className="py-4 px-5 text-right tabular-nums font-black bg-[#e2ebf3] text-base whitespace-nowrap min-w-[160px] border-l border-slate-300">
+                                    <span className={isNeg ? 'text-blue-600' : 'text-rose-600'}>
+                                      {groupMargin}%
+                                    </span>
+                                  </td>
+                                );
+                              })()}
                             </tr>
                           );
                         }
@@ -752,19 +766,33 @@ export default function App() {
                               <td className="py-4 px-5 font-black text-slate-900 border-r border-slate-200 whitespace-nowrap bg-amber-50/30">
                                 {row.name}
                               </td>
-                              {companies.map((comp, idx) => (
-                                <td
-                                  key={comp}
-                                  className={`py-4 px-5 text-right border-r border-slate-200 tabular-nums font-black text-black text-base whitespace-nowrap min-w-[140px] ${
-                                    idx % 2 === 1 ? 'bg-slate-100/80' : 'bg-white'
-                                  }`}
-                                >
-                                  {getMonthlyMargin(selectedYear, comp, selectedMonth)}%
-                                </td>
-                              ))}
-                              <td className="py-4 px-5 text-right tabular-nums font-black text-slate-900 bg-[#e2ebf3] text-base whitespace-nowrap min-w-[160px] border-l border-slate-300">
-                                {getGroupMonthlyMarginSum(selectedYear, selectedMonth)}%
-                              </td>
+                              {companies.map((comp, idx) => {
+                                const marginVal = getMonthlyMargin(selectedYear, comp, selectedMonth);
+                                const isNeg = Number(marginVal) < 0;
+                                return (
+                                  <td
+                                    key={comp}
+                                    className={`py-4 px-5 text-right border-r border-slate-200 tabular-nums font-black text-base whitespace-nowrap min-w-[140px] ${
+                                      idx % 2 === 1 ? 'bg-slate-100/80' : 'bg-white'
+                                    }`}
+                                  >
+                                    <span className={isNeg ? 'text-blue-600' : 'text-rose-600'}>
+                                      {marginVal}%
+                                    </span>
+                                  </td>
+                                );
+                              })}
+                              {(() => {
+                                const groupMargin = getGroupMonthlyMarginSum(selectedYear, selectedMonth);
+                                const isNeg = Number(groupMargin) < 0;
+                                return (
+                                  <td className="py-4 px-5 text-right tabular-nums font-black bg-[#e2ebf3] text-base whitespace-nowrap min-w-[160px] border-l border-slate-300">
+                                    <span className={isNeg ? 'text-blue-600' : 'text-rose-600'}>
+                                      {groupMargin}%
+                                    </span>
+                                  </td>
+                                );
+                              })()}
                             </tr>
                           );
                         }
@@ -998,14 +1026,27 @@ export default function App() {
                                   <span className="text-xs px-1.5 py-0.5 rounded font-mono font-black shrink-0 bg-amber-100 text-amber-800">%</span>
                                 </div>
                               </td>
-                              {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
-                                <td key={m} className="py-4 px-3 text-right border-r border-slate-200 tabular-nums text-black font-black bg-amber-50/20 text-base min-w-[150px] w-[150px] whitespace-nowrap">
-                                  {getMonthlyMargin(selectedYear, selectedCompany, m)}%
-                                </td>
-                              ))}
-                              <td className="py-4 px-4 text-right tabular-nums font-black text-amber-950 bg-amber-100/70 text-base min-w-[180px] w-[180px] whitespace-nowrap">
-                                {yearlyMarginSum}%
-                              </td>
+                              {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => {
+                                const marginVal = getMonthlyMargin(selectedYear, selectedCompany, m);
+                                const isNeg = Number(marginVal) < 0;
+                                return (
+                                  <td key={m} className="py-4 px-3 text-right border-r border-slate-200 tabular-nums font-black bg-amber-50/20 text-base min-w-[150px] w-[150px] whitespace-nowrap">
+                                    <span className={isNeg ? 'text-blue-600' : 'text-rose-600'}>
+                                      {marginVal}%
+                                    </span>
+                                  </td>
+                                );
+                              })}
+                              {(() => {
+                                const isNeg = Number(yearlyMarginSum) < 0;
+                                return (
+                                  <td className="py-4 px-4 text-right tabular-nums font-black bg-amber-100/70 text-base min-w-[180px] w-[180px] whitespace-nowrap">
+                                    <span className={isNeg ? 'text-blue-600' : 'text-rose-600'}>
+                                      {yearlyMarginSum}%
+                                    </span>
+                                  </td>
+                                );
+                              })()}
                             </tr>
                           );
                         }
