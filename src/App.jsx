@@ -40,9 +40,9 @@ const INITIAL_COMPANIES = ['푸드윈', '파인쿡', '에이프린트', '코리�
 
 // 기본 지표 목록
 const INITIAL_ROWS = [
-  { id: 'revenue', name: '매출액', calcType: '+', isPercentage: false, isBuiltIn: true },
-  { id: 'op_profit', name: '영업이익', calcType: '+', isPercentage: false, isBuiltIn: true },
-  { id: 'op_margin', name: '영업이익률', calcType: 'calc', isPercentage: true, isBuiltIn: true },
+  { id: 'revenue', name: '지출합계', calcType: '+', isPercentage: false, isBuiltIn: true },
+  { id: 'op_profit', name: '손익', calcType: '+', isPercentage: false, isBuiltIn: true },
+  { id: 'op_margin', name: '손익률', calcType: 'calc', isPercentage: true, isBuiltIn: true },
 ];
 
 // 업체 동향 메모 기본값
@@ -122,7 +122,12 @@ export default function App() {
         if (data.matrixData) setMatrixData(data.matrixData);
         if (data.companies) setCompanies(data.companies);
         if (data.rows) {
-          const sanitizedRows = data.rows.map((r) => (r.id === 'revenue' ? { ...r, name: '매출액' } : r));
+          const sanitizedRows = data.rows.map((r) => {
+            if (r.id === 'revenue') return { ...r, name: '지출합계' };
+            if (r.id === 'op_profit') return { ...r, name: '손익' };
+            if (r.id === 'op_margin') return { ...r, name: '손익률' };
+            return r;
+          });
           setRows(sanitizedRows);
         }
         if (data.companyMemos) setCompanyMemos(data.companyMemos);
@@ -663,11 +668,11 @@ export default function App() {
                 </div>
               </section>
 
-              {/* 3. 매출 상세 분석 파트 (4열 종대 카드 레이아웃) */}
+              {/* 3. 지출합계 상세 분석 파트 (4열 종대 카드 레이아웃) */}
               <section className="space-y-6 pt-4">
                 <div className="flex items-center justify-between border-b border-slate-200 pb-3">
                   <h2 className="text-2xl font-black text-slate-900 border-b-2 border-slate-900 pb-1">
-                    매출 상세 분석 ({selectedMonth}월)
+                    지출합계 상세 분석 ({selectedMonth}월)
                   </h2>
                 </div>
 
@@ -697,10 +702,10 @@ export default function App() {
                           <h3 className="text-lg font-black text-slate-900">{comp}</h3>
                         </div>
 
-                        {/* 당월 매출 비교 */}
+                        {/* 당월 지출합계 비교 */}
                         <div className="bg-slate-50/80 p-4 rounded-2xl border border-slate-200 space-y-3">
                           <span className="inline-block bg-white text-slate-600 border border-slate-300 text-xs font-black px-2.5 py-1 rounded-md shadow-xs">
-                            {selectedMonth}월 당월 매출
+                            {selectedMonth}월 당월 지출합계
                           </span>
                           <div className="space-y-1.5 text-sm">
                             <div className="flex items-center justify-between text-slate-700">
@@ -718,10 +723,10 @@ export default function App() {
                           </div>
                         </div>
 
-                        {/* 누적 매출 비교 */}
+                        {/* 누적 지출합계 비교 */}
                         <div className="bg-slate-50/80 p-4 rounded-2xl border border-slate-200 space-y-3">
                           <span className="inline-block bg-white text-slate-600 border border-slate-300 text-xs font-black px-2.5 py-1 rounded-md shadow-xs">
-                            1~{selectedMonth}월 누적 매출
+                            1~{selectedMonth}월 누적 지출합계
                           </span>
                           <div className="space-y-2 text-sm">
                             <div className="flex items-center justify-between text-slate-700">
