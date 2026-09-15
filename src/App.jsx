@@ -40,9 +40,10 @@ const INITIAL_COMPANIES = ['푸드윈', '파인쿡', '에이프린트', '코리�
 
 // 기본 지표 목록
 const INITIAL_ROWS = [
-  { id: 'revenue', name: '지출합계', calcType: '+', isPercentage: false, isBuiltIn: true },
-  { id: 'op_profit', name: '손익', calcType: '+', isPercentage: false, isBuiltIn: true },
-  { id: 'op_margin', name: '손익률', calcType: 'calc', isPercentage: true, isBuiltIn: true },
+  { id: 'income', name: '수입', calcType: '+', isPercentage: false, isBuiltIn: true, isCalculated: false },
+  { id: 'revenue', name: '지출합계', calcType: '-', isPercentage: false, isBuiltIn: true, isCalculated: false },
+  { id: 'op_profit', name: '손익', calcType: 'calc', isPercentage: false, isBuiltIn: true, isCalculated: true },
+  { id: 'op_margin', name: '손익률', calcType: 'calc', isPercentage: true, isBuiltIn: true, isCalculated: true },
 ];
 
 // 업체 동향 메모 기본값
@@ -74,11 +75,11 @@ const generateInitialMatrix = () => {
       const baseRev = baseValues[comp]?.[y] || (y === 2025 ? 40000000 : 45000000);
       for (let m = 1; m <= 12; m++) {
         const factor = 0.85 + (m * 0.03);
-        const monthlyRev = Math.round(baseRev * factor);
-        const monthlyProfit = Math.round(monthlyRev * 0.14);
+        const monthlyExpense = Math.round(baseRev * factor);
+        const monthlyIncome = Math.round(monthlyExpense * 1.16); // 수입 = 지출 + 손익
         initial[y][comp][m] = {
-          revenue: monthlyRev,
-          op_profit: monthlyProfit,
+          income: monthlyIncome,
+          revenue: monthlyExpense,
         };
       }
     });
@@ -122,10 +123,15 @@ export default function App() {
         if (data.matrixData) setMatrixData(data.matrixData);
         if (data.companies) setCompanies(data.companies);
         if (data.rows) {
-          const sanitizedRows = data.rows.map((r) => {
-            if (r.id === 'revenue') return { ...r, name: '지출합계' };
-            if (r.id === 'op_profit') return { ...r, name: '손익' };
-            if (r.id === 'op_margin') return { ...r, name: '손익률' };
+          let updatedRows = [...data.rows];
+          if (!updatedRows.some((r) => r.id === 'income')) {
+            updatedRows.unshift({ id: 'income', name: '수입', calcType: '+', isPercentage: false, isBuiltIn: true, isCalculated: false });
+          }
+          const sanitizedRows = updatedRows.map((r) => {
+            if (r.id === 'income') return { ...r, name: '수입', calcType: '+', isCalculated: false };
+            if (r.id === 'revenue') return { ...r, name: '지출합계', calcType: '-', isCalculated: false };
+            if (r.id === 'op_profit') return { ...r, name: '손익', calcType: 'calc', isCalculated: true };
+            if (r.id === 'op_margin') return { ...r, name: '손익률', calcType: 'calc', isCalculated: true };
             return r;
           });
           setRows(sanitizedRows);
@@ -523,7 +529,7 @@ export default function App() {
                         if (row.isPercentage) {
                           return (
                             <tr key={row.id} className="font-black text-base hover:bg-slate-100/50 transition whitespace-nowrap">
-                              <td className="py-4 px-5 font-black text-slate-900 border-r border-slate-200 whitespace-nowrap bg-white">
+                              <td className="py-4 px-5 font-black text-slate-900 border-r border-slate-200 whitespace-nowrap bg-amber-50/30">
                                 {row.name}
                               </td>
                               {companies.map((comp, idx) => (
@@ -543,7 +549,42 @@ export default function App() {
                           );
                         }
 
-                        const compValues = companies.map((c) => getYearlySum(selectedYear, c, row.id));
+                        if (row.isCalculated || row.id === 'op_profit') {
+                          const groupProfit = getGroupYearlyProfit(selectedYear);
+                          return (
+                            <tr key={row.id} className="font-black text-base hover:bg-slate-100/50 transition whitespace-nowrap bg-purple-50/20">
+                              <td className="py-4 px-5 font-black text-purple-950 border-r border-slate-200 whitespace-nowrap bg-purple-100/40">
+                                {row.name}
+                              </td>
+                              {companies.map((comp, idx) => {
+                                const profit = getYearlyProfit(selectedYear, comp);
+                                return (
+                                  <td
+                                    key={comp}
+                                    className={`py-4 px-5 text-right border-r border-slate-200 tabular-nums font-black text-base whitespace-nowrap min-w-[140px] ${
+                                      idx % 2 === 1 ? 'bg-slate-100/80' : 'bg-white'
+                                    }`}
+                                  >
+                                    <span className={profit >= 0 ? 'text-slate-900' : 'text-rose-600'}>
+                                      {profit.toLocaleString()}
+                                    </span>
+                                  </td>
+                                );
+                              })}
+                              <td className="py-4 px-5 text-right tabular-nums font-black text-slate-900 bg-[#e2ebf3] text-lg border-l border-slate-300 whitespace-nowrap min-w-[160px]">
+                                <span className={groupProfit >= 0 ? 'text-slate-900' : 'text-rose-600'}>
+                                  {groupProfit.toLocaleString()}
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        }
+
+                        const compValues = companies.map((c) => {
+                          if (row.id === 'income') return getYearlyIncome(selectedYear, c);
+                          if (row.id === 'revenue') return getYearlyExpense(selectedYear, c);
+                          return getYearlySum(selectedYear, c, row.id);
+                        });
                         const totalSum = compValues.reduce((a, b) => a + b, 0);
 
                         return (
@@ -558,7 +599,7 @@ export default function App() {
                                   idx % 2 === 1 ? 'bg-slate-100/80' : 'bg-white'
                                 }`}
                               >
-                                {getYearlySum(selectedYear, comp, row.id).toLocaleString()}
+                                {compValues[idx].toLocaleString()}
                               </td>
                             ))}
                             <td className="py-4 px-5 text-right tabular-nums font-black text-slate-900 bg-[#e2ebf3] text-lg border-l border-slate-300 whitespace-nowrap min-w-[160px]">
@@ -616,7 +657,7 @@ export default function App() {
                         if (row.isPercentage) {
                           return (
                             <tr key={row.id} className="font-black text-base hover:bg-slate-100/50 transition whitespace-nowrap">
-                              <td className="py-4 px-5 font-black text-slate-900 border-r border-slate-200 whitespace-nowrap bg-white">
+                              <td className="py-4 px-5 font-black text-slate-900 border-r border-slate-200 whitespace-nowrap bg-amber-50/30">
                                 {row.name}
                               </td>
                               {companies.map((comp, idx) => (
@@ -636,7 +677,42 @@ export default function App() {
                           );
                         }
 
-                        const monthCompValues = companies.map((c) => matrixData?.[selectedYear]?.[c]?.[selectedMonth]?.[row.id] || 0);
+                        if (row.isCalculated || row.id === 'op_profit') {
+                          const groupProfit = getGroupMonthlyProfit(selectedYear, selectedMonth);
+                          return (
+                            <tr key={row.id} className="font-black text-base hover:bg-slate-100/50 transition whitespace-nowrap bg-purple-50/20">
+                              <td className="py-4 px-5 font-black text-purple-950 border-r border-slate-200 whitespace-nowrap bg-purple-100/40">
+                                {row.name}
+                              </td>
+                              {companies.map((comp, idx) => {
+                                const profit = getMonthlyProfit(selectedYear, comp, selectedMonth);
+                                return (
+                                  <td
+                                    key={comp}
+                                    className={`py-4 px-5 text-right border-r border-slate-200 tabular-nums font-black text-base whitespace-nowrap min-w-[140px] ${
+                                      idx % 2 === 1 ? 'bg-slate-100/80' : 'bg-white'
+                                    }`}
+                                  >
+                                    <span className={profit >= 0 ? 'text-slate-900' : 'text-rose-600'}>
+                                      {profit.toLocaleString()}
+                                    </span>
+                                  </td>
+                                );
+                              })}
+                              <td className="py-4 px-5 text-right tabular-nums font-black text-slate-900 bg-[#e2ebf3] text-lg border-l border-slate-300 whitespace-nowrap min-w-[160px]">
+                                <span className={groupProfit >= 0 ? 'text-slate-900' : 'text-rose-600'}>
+                                  {groupProfit.toLocaleString()}
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        }
+
+                        const monthCompValues = companies.map((c) => {
+                          if (row.id === 'income') return getMonthlyIncome(selectedYear, c, selectedMonth);
+                          if (row.id === 'revenue') return getMonthlyExpense(selectedYear, c, selectedMonth);
+                          return matrixData?.[selectedYear]?.[c]?.[selectedMonth]?.[row.id] || 0;
+                        });
                         const monthTotalSum = monthCompValues.reduce((a, b) => a + b, 0);
 
                         return (
@@ -644,19 +720,16 @@ export default function App() {
                             <td className="py-4 px-5 font-bold text-slate-900 border-r border-slate-200 whitespace-nowrap bg-white">
                               {row.name}
                             </td>
-                            {companies.map((comp, idx) => {
-                              const val = matrixData?.[selectedYear]?.[comp]?.[selectedMonth]?.[row.id] || 0;
-                              return (
-                                <td
-                                  key={comp}
-                                  className={`py-4 px-5 text-right border-r border-slate-200 tabular-nums font-bold text-black text-base whitespace-nowrap min-w-[140px] ${
-                                    idx % 2 === 1 ? 'bg-slate-100/80' : 'bg-white'
-                                  }`}
-                                >
-                                  {val.toLocaleString()}
-                                </td>
-                              );
-                            })}
+                            {companies.map((comp, idx) => (
+                              <td
+                                key={comp}
+                                className={`py-4 px-5 text-right border-r border-slate-200 tabular-nums font-bold text-black text-base whitespace-nowrap min-w-[140px] ${
+                                  idx % 2 === 1 ? 'bg-slate-100/80' : 'bg-white'
+                                }`}
+                              >
+                                {monthCompValues[idx].toLocaleString()}
+                              </td>
+                            ))}
                             <td className="py-4 px-5 text-right tabular-nums font-black text-slate-900 bg-[#e2ebf3] text-lg border-l border-slate-300 whitespace-nowrap min-w-[160px]">
                               {monthTotalSum.toLocaleString()}
                             </td>
@@ -823,26 +896,64 @@ export default function App() {
                         if (row.isPercentage) {
                           const yearlyMarginSum = getYearlyMarginSum(selectedYear, selectedCompany);
                           return (
-                            <tr key={row.id} className="bg-sky-50/70 font-black hover:bg-sky-100/50 transition text-base whitespace-nowrap">
+                            <tr key={row.id} className="bg-amber-50/40 font-black hover:bg-amber-100/40 transition text-base whitespace-nowrap">
                               <td
                                 onClick={() => setEditingRow(row)}
                                 className="py-4 px-4 text-slate-900 border-r border-slate-200 cursor-pointer hover:text-sky-600 hover:bg-sky-50 transition min-w-[180px] w-[180px] whitespace-nowrap"
                               >
-                                {row.name}
+                                <div className="flex items-center justify-between gap-2">
+                                  <span>{row.name}</span>
+                                  <span className="text-xs px-1.5 py-0.5 rounded font-mono font-black shrink-0 bg-amber-100 text-amber-800">%</span>
+                                </div>
                               </td>
                               {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
-                                <td key={m} className="py-4 px-3 text-right border-r border-slate-200 tabular-nums text-black font-black bg-slate-50/50 text-base min-w-[150px] w-[150px] whitespace-nowrap">
+                                <td key={m} className="py-4 px-3 text-right border-r border-slate-200 tabular-nums text-black font-black bg-amber-50/20 text-base min-w-[150px] w-[150px] whitespace-nowrap">
                                   {getMonthlyMargin(selectedYear, selectedCompany, m)}%
                                 </td>
                               ))}
-                              <td className="py-4 px-4 text-right tabular-nums font-black text-sky-950 bg-slate-100 text-base min-w-[180px] w-[180px] whitespace-nowrap">
+                              <td className="py-4 px-4 text-right tabular-nums font-black text-amber-950 bg-amber-100/70 text-base min-w-[180px] w-[180px] whitespace-nowrap">
                                 {yearlyMarginSum}%
                               </td>
                             </tr>
                           );
                         }
 
-                        const yearlyTotalSum = getYearlySum(selectedYear, selectedCompany, row.id);
+                        if (row.isCalculated || row.id === 'op_profit') {
+                          const yearlyProfit = getYearlyProfit(selectedYear, selectedCompany);
+                          return (
+                            <tr key={row.id} className="bg-purple-50/50 font-black hover:bg-purple-100/50 transition text-base whitespace-nowrap">
+                              <td
+                                onClick={() => setEditingRow(row)}
+                                className="py-4 px-4 text-slate-900 border-r border-slate-200 cursor-pointer hover:text-sky-600 hover:bg-sky-50 transition min-w-[180px] w-[180px] whitespace-nowrap"
+                              >
+                                <div className="flex items-center justify-between gap-2">
+                                  <span>{row.name}</span>
+                                  <span className="text-xs px-1.5 py-0.5 rounded font-mono font-black shrink-0 bg-purple-100 text-purple-800">계산</span>
+                                </div>
+                              </td>
+                              {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => {
+                                const profitVal = getMonthlyProfit(selectedYear, selectedCompany, m);
+                                return (
+                                  <td key={m} className="py-4 px-3 text-right border-r border-slate-200 tabular-nums font-black text-base bg-purple-50/30 min-w-[150px] w-[150px] whitespace-nowrap">
+                                    <span className={profitVal >= 0 ? 'text-slate-900' : 'text-rose-600'}>
+                                      {profitVal.toLocaleString()}
+                                    </span>
+                                  </td>
+                                );
+                              })}
+                              <td className="py-4 px-4 text-right tabular-nums font-black text-purple-950 bg-purple-100/70 text-base min-w-[180px] w-[180px] whitespace-nowrap">
+                                <span className={yearlyProfit >= 0 ? 'text-slate-900' : 'text-rose-600'}>
+                                  {yearlyProfit.toLocaleString()}
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        }
+
+                        let yearlyTotalSum = 0;
+                        if (row.id === 'income') yearlyTotalSum = getYearlyIncome(selectedYear, selectedCompany);
+                        else if (row.id === 'revenue') yearlyTotalSum = getYearlyExpense(selectedYear, selectedCompany);
+                        else yearlyTotalSum = getYearlySum(selectedYear, selectedCompany, row.id);
 
                         return (
                           <tr key={row.id} className="hover:bg-slate-50 transition text-base whitespace-nowrap">
