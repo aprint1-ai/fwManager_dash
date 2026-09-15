@@ -46,6 +46,34 @@ const INITIAL_ROWS = [
   { id: 'op_margin', name: '손익률', calcType: 'calc', isPercentage: true, isBuiltIn: true, isCalculated: true },
 ];
 
+// 그룹 지표 묶음 정의
+const COMPANY_GROUPS_DEF = [
+  {
+    id: 'foodwin',
+    title: '푸드윈',
+    subTitle: '(본사, 광주, 군포, 급식프로)',
+    match: (c) => c.includes('푸드윈') || c.includes('급식프로')
+  },
+  {
+    id: 'finecook',
+    title: '파인쿡, 연두애',
+    subTitle: null,
+    match: (c) => c.includes('파인쿡') || c.includes('연두애')
+  },
+  {
+    id: 'aprint',
+    title: '인쇄파트',
+    subTitle: '(에이프린트, 코리아프린테크)',
+    match: (c) => c.includes('에이프린트') || c.includes('프린테크')
+  },
+  {
+    id: 'jinnong',
+    title: '진농',
+    subTitle: null,
+    match: (c) => c.includes('진농')
+  }
+];
+
 // 업체 동향 메모 기본값
 const INITIAL_MEMOS = {
   '푸드윈': '25년 대비 특판 포장 선물세트 출고량 급증',
@@ -468,6 +496,48 @@ export default function App() {
     return sum;
   };
 
+  // 16. 그룹별 연산 유틸리티 함수
+  const activeGroups = useMemo(() => {
+    const groups = COMPANY_GROUPS_DEF.map((g) => ({
+      ...g,
+      compList: companies.filter(g.match)
+    }));
+    const assigned = new Set(groups.flatMap((g) => g.compList));
+    const unassigned = companies.filter((c) => !assigned.has(c));
+    if (unassigned.length > 0) {
+      groups.push({
+        id: 'other',
+        title: unassigned.join(', '),
+        subTitle: null,
+        compList: unassigned
+      });
+    }
+    return groups;
+  }, [companies]);
+
+  const getGroupYearlyIncomeForGroup = (year, compList) => compList.reduce((acc, c) => acc + getYearlyIncome(year, c), 0);
+  const getGroupYearlyExpenseForGroup = (year, compList) => compList.reduce((acc, c) => acc + getYearlyExpense(year, c), 0);
+  const getGroupYearlyProfitForGroup = (year, compList) => getGroupYearlyIncomeForGroup(year, compList) - getGroupYearlyExpenseForGroup(year, compList);
+  const getGroupYearlyMarginForGroup = (year, compList) => {
+    const inc = getGroupYearlyIncomeForGroup(year, compList);
+    const profit = getGroupYearlyProfitForGroup(year, compList);
+    if (!inc || inc === 0) return '0.00';
+    return formatMargin((profit / inc) * 100);
+  };
+
+  const getGroupMonthlyIncomeForGroup = (year, month, compList) => compList.reduce((acc, c) => acc + getMonthlyIncome(year, c, month), 0);
+  const getGroupMonthlyExpenseForGroup = (year, month, compList) => compList.reduce((acc, c) => acc + getMonthlyExpense(year, c, month), 0);
+  const getGroupMonthlyProfitForGroup = (year, month, compList) => getGroupMonthlyIncomeForGroup(year, month, compList) - getGroupMonthlyExpenseForGroup(year, month, compList);
+  const getGroupMonthlyMarginForGroup = (year, month, compList) => {
+    const inc = getGroupMonthlyIncomeForGroup(year, month, compList);
+    const profit = getGroupMonthlyProfitForGroup(year, month, compList);
+    if (!inc || inc === 0) return '0.00';
+    return formatMargin((profit / inc) * 100);
+  };
+
+  const getGroupYearlySumForGroup = (year, rowId, compList) => compList.reduce((acc, c) => acc + getYearlySum(year, c, rowId), 0);
+  const getGroupMonthlySumForGroup = (year, month, rowId, compList) => compList.reduce((acc, c) => acc + (matrixData?.[year]?.[c]?.[month]?.[rowId] || 0), 0);
+
   return (
     <div className="min-h-screen bg-slate-100 flex flex-col text-slate-900">
       {/* 1. 상단 GNB 헤더 */}
@@ -591,7 +661,7 @@ export default function App() {
                 <div className="flex items-center justify-between">
                   <h2 className="text-2xl font-black text-slate-900 flex items-center gap-2">
                     <span className="inline-block w-3 h-7 bg-sky-700 rounded-sm"></span>
-                    {selectedYear}년 (연간 누적액 총액 지표)
+                    {selectedYear}년 연간 누적액 총액 지표
                   </h2>
                   <span className="text-xs font-bold text-slate-600 bg-white border border-slate-300 px-4 py-1.5 rounded-full shadow-sm">
                     * 전체 회사 연간 실적 집계
@@ -717,6 +787,145 @@ export default function App() {
                     </tbody>
                   </table>
                 </div>
+
+                {/* 1-2. 연간 누적액 그룹별 지표 */}
+                <div className="pt-2 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xl font-black text-slate-800 flex items-center gap-2">
+                      <span className="inline-block w-2.5 h-6 bg-sky-600 rounded-xs"></span>
+                      {selectedYear}년 연간 누적액 그룹별 지표
+                    </h3>
+                    <span className="text-xs font-bold text-slate-500 bg-slate-100 border border-slate-200 px-3 py-1 rounded-full shadow-xs">
+                      * 그룹별 연간 실적 합산 지표
+                    </span>
+                  </div>
+                  <div className="inline-block max-w-full overflow-x-auto shadow-sm rounded-xl border border-slate-300 bg-white">
+                    <table className="w-auto text-left border-collapse">
+                      <thead>
+                        <tr className="bg-[#1b587d] text-white text-base font-black whitespace-nowrap">
+                          <th className="py-3 px-4 w-48 border-r border-sky-800 whitespace-nowrap">구분</th>
+                          {activeGroups.map((g, idx) => (
+                            <th
+                              key={g.id}
+                              className={`py-3 px-4 border-r border-sky-800 text-center whitespace-nowrap w-[220px] min-w-[220px] max-w-[220px] ${
+                                idx % 2 === 1 ? 'bg-[#164a6a]' : ''
+                              }`}
+                            >
+                              <div className="flex flex-col items-center justify-center leading-tight">
+                                <span className="text-base font-black">{g.title}</span>
+                                {g.subTitle && (
+                                  <span className="text-xs font-semibold text-sky-200 mt-1">
+                                    {g.subTitle}
+                                  </span>
+                                )}
+                              </div>
+                            </th>
+                          ))}
+                          <th className="py-3 px-4 text-center bg-[#154663] whitespace-nowrap w-[220px] min-w-[220px] max-w-[220px]">합계</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-200">
+                        {rows.map((row) => {
+                          if (row.isPercentage) {
+                            return (
+                              <tr key={row.id} className="font-black text-base hover:bg-slate-100/50 transition whitespace-nowrap">
+                                <td className="py-4 px-5 font-black text-slate-900 border-r border-slate-200 whitespace-nowrap bg-amber-50/30">
+                                  {row.name}
+                                </td>
+                                {activeGroups.map((g, idx) => {
+                                  const marginVal = getGroupYearlyMarginForGroup(selectedYear, g.compList);
+                                  const isNeg = Number(marginVal) < 0;
+                                  return (
+                                    <td
+                                      key={g.id}
+                                      className={`py-4 px-5 text-right border-r border-slate-200 tabular-nums font-black text-base whitespace-nowrap w-[220px] min-w-[220px] max-w-[220px] ${
+                                        idx % 2 === 1 ? 'bg-slate-100/80' : 'bg-white'
+                                      }`}
+                                    >
+                                      <span className={isNeg ? 'text-blue-600' : 'text-rose-600'}>
+                                        {marginVal}%
+                                      </span>
+                                    </td>
+                                  );
+                                })}
+                                {(() => {
+                                  const groupMargin = getGroupYearlyMarginSum(selectedYear);
+                                  const isNeg = Number(groupMargin) < 0;
+                                  return (
+                                    <td className="py-4 px-5 text-right tabular-nums font-black bg-[#e2ebf3] text-base whitespace-nowrap w-[220px] min-w-[220px] max-w-[220px] border-l border-slate-300">
+                                      <span className={isNeg ? 'text-blue-600' : 'text-rose-600'}>
+                                        {groupMargin}%
+                                      </span>
+                                    </td>
+                                  );
+                                })()}
+                              </tr>
+                            );
+                          }
+
+                          if (row.isCalculated || row.id === 'op_profit') {
+                            const groupProfitTotal = getGroupYearlyProfit(selectedYear);
+                            return (
+                              <tr key={row.id} className="font-black text-base hover:bg-slate-100/50 transition whitespace-nowrap bg-purple-50/20">
+                                <td className="py-4 px-5 font-black text-purple-950 border-r border-slate-200 whitespace-nowrap bg-purple-100/40">
+                                  {row.name}
+                                </td>
+                                {activeGroups.map((g, idx) => {
+                                  const profit = getGroupYearlyProfitForGroup(selectedYear, g.compList);
+                                  return (
+                                    <td
+                                      key={g.id}
+                                      className={`py-4 px-5 text-right border-r border-slate-200 tabular-nums font-black text-base whitespace-nowrap w-[220px] min-w-[220px] max-w-[220px] ${
+                                        idx % 2 === 1 ? 'bg-slate-100/80' : 'bg-white'
+                                      }`}
+                                    >
+                                      <span className="text-slate-900">
+                                        {profit.toLocaleString()}
+                                      </span>
+                                    </td>
+                                  );
+                                })}
+                                <td className="py-4 px-5 text-right tabular-nums font-black text-slate-900 bg-[#e2ebf3] text-lg border-l border-slate-300 whitespace-nowrap w-[220px] min-w-[220px] max-w-[220px]">
+                                  <span className="text-slate-900">
+                                    {groupProfitTotal.toLocaleString()}
+                                  </span>
+                                </td>
+                              </tr>
+                            );
+                          }
+
+                          const groupCompValues = activeGroups.map((g) => {
+                            if (row.id === 'income') return getGroupYearlyIncomeForGroup(selectedYear, g.compList);
+                            if (row.id === 'revenue') return getGroupYearlyExpenseForGroup(selectedYear, g.compList);
+                            return getGroupYearlySumForGroup(selectedYear, row.id, g.compList);
+                          });
+                          const totalSum = groupCompValues.reduce((a, b) => a + b, 0);
+
+                          return (
+                            <tr key={row.id} className="hover:bg-slate-100/50 transition text-base whitespace-nowrap">
+                              <td className="py-4 px-5 font-bold text-slate-900 border-r border-slate-200 whitespace-nowrap bg-white">
+                                {row.name}
+                              </td>
+                              {activeGroups.map((g, idx) => (
+                                <td
+                                  key={g.id}
+                                  className={`py-4 px-5 text-right border-r border-slate-200 tabular-nums font-bold text-black text-base whitespace-nowrap w-[220px] min-w-[220px] max-w-[220px] ${
+                                    idx % 2 === 1 ? 'bg-slate-100/80' : 'bg-white'
+                                  }`}
+                                >
+                                  {groupCompValues[idx].toLocaleString()}
+                                </td>
+                              ))}
+                              <td className="py-4 px-5 text-right tabular-nums font-black text-slate-900 bg-[#e2ebf3] text-lg border-l border-slate-300 whitespace-nowrap w-[220px] min-w-[220px] max-w-[220px]">
+                                {totalSum.toLocaleString()}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               </section>
 
               {/* 2. 하단 표: 이번달 지표 */}
@@ -743,19 +952,19 @@ export default function App() {
                 <div className="overflow-x-auto shadow-sm rounded-xl border border-slate-300 bg-white">
                   <table className="w-full min-w-[1100px] text-left border-collapse">
                     <thead>
-                      <tr className="bg-[#1b587d] text-white text-base font-black whitespace-nowrap">
-                        <th className="py-4 px-5 w-48 border-r border-sky-800 whitespace-nowrap">구분</th>
+                      <tr className="bg-[#157a3e] text-white text-base font-black whitespace-nowrap">
+                        <th className="py-4 px-5 w-48 border-r border-emerald-700 whitespace-nowrap">구분</th>
                         {companies.map((comp, idx) => (
                           <th
                             key={comp}
-                            className={`py-4 px-5 border-r border-sky-800 text-center whitespace-nowrap min-w-[140px] ${
-                              idx % 2 === 1 ? 'bg-[#164a6a]' : ''
+                            className={`py-4 px-5 border-r border-emerald-700 text-center whitespace-nowrap min-w-[140px] ${
+                              idx % 2 === 1 ? 'bg-[#116332]' : ''
                             }`}
                           >
                             {comp}
                           </th>
                         ))}
-                        <th className="py-4 px-5 text-center bg-[#154663] whitespace-nowrap min-w-[160px]">합계</th>
+                        <th className="py-4 px-5 text-center bg-[#0d4d27] whitespace-nowrap min-w-[160px]">합계</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-200">
@@ -786,7 +995,7 @@ export default function App() {
                                 const groupMargin = getGroupMonthlyMarginSum(selectedYear, selectedMonth);
                                 const isNeg = Number(groupMargin) < 0;
                                 return (
-                                  <td className="py-4 px-5 text-right tabular-nums font-black bg-[#e2ebf3] text-base whitespace-nowrap min-w-[160px] border-l border-slate-300">
+                                  <td className="py-4 px-5 text-right tabular-nums font-black bg-[#e6f4ea] text-base whitespace-nowrap min-w-[160px] border-l border-emerald-300">
                                     <span className={isNeg ? 'text-blue-600' : 'text-rose-600'}>
                                       {groupMargin}%
                                     </span>
@@ -819,7 +1028,7 @@ export default function App() {
                                   </td>
                                 );
                               })}
-                              <td className="py-4 px-5 text-right tabular-nums font-black text-slate-900 bg-[#e2ebf3] text-lg border-l border-slate-300 whitespace-nowrap min-w-[160px]">
+                              <td className="py-4 px-5 text-right tabular-nums font-black text-slate-900 bg-[#e6f4ea] text-lg border-l border-emerald-300 whitespace-nowrap min-w-[160px]">
                                 <span className="text-slate-900">
                                   {groupProfit.toLocaleString()}
                                 </span>
@@ -850,7 +1059,7 @@ export default function App() {
                                 {monthCompValues[idx].toLocaleString()}
                               </td>
                             ))}
-                            <td className="py-4 px-5 text-right tabular-nums font-black text-slate-900 bg-[#e2ebf3] text-lg border-l border-slate-300 whitespace-nowrap min-w-[160px]">
+                            <td className="py-4 px-5 text-right tabular-nums font-black text-slate-900 bg-[#e6f4ea] text-lg border-l border-emerald-300 whitespace-nowrap min-w-[160px]">
                               {monthTotalSum.toLocaleString()}
                             </td>
                           </tr>
@@ -858,6 +1067,145 @@ export default function App() {
                       })}
                     </tbody>
                   </table>
+                </div>
+
+                {/* 2-2. 이번달 그룹별 지표 */}
+                <div className="pt-2 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xl font-black text-slate-800 flex items-center gap-2">
+                      <span className="inline-block w-2.5 h-6 bg-emerald-600 rounded-xs"></span>
+                      {selectedYear}년 {selectedMonth}월 그룹별 지표
+                    </h3>
+                    <span className="text-xs font-bold text-slate-500 bg-slate-100 border border-slate-200 px-3 py-1 rounded-full shadow-xs">
+                      * 그룹별 당월 실적 합산 지표
+                    </span>
+                  </div>
+                  <div className="inline-block max-w-full overflow-x-auto shadow-sm rounded-xl border border-slate-300 bg-white">
+                    <table className="w-auto text-left border-collapse">
+                      <thead>
+                        <tr className="bg-[#157a3e] text-white text-base font-black whitespace-nowrap">
+                          <th className="py-3 px-4 w-48 border-r border-emerald-700 whitespace-nowrap">구분</th>
+                          {activeGroups.map((g, idx) => (
+                            <th
+                              key={g.id}
+                              className={`py-3 px-4 border-r border-emerald-700 text-center whitespace-nowrap w-[220px] min-w-[220px] max-w-[220px] ${
+                                idx % 2 === 1 ? 'bg-[#116332]' : ''
+                              }`}
+                            >
+                              <div className="flex flex-col items-center justify-center leading-tight">
+                                <span className="text-base font-black">{g.title}</span>
+                                {g.subTitle && (
+                                  <span className="text-xs font-semibold text-emerald-100 mt-1">
+                                    {g.subTitle}
+                                  </span>
+                                )}
+                              </div>
+                            </th>
+                          ))}
+                          <th className="py-3 px-4 text-center bg-[#0d4d27] whitespace-nowrap w-[220px] min-w-[220px] max-w-[220px]">합계</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-200">
+                        {rows.map((row) => {
+                          if (row.isPercentage) {
+                            return (
+                              <tr key={row.id} className="font-black text-base hover:bg-slate-100/50 transition whitespace-nowrap">
+                                <td className="py-4 px-5 font-black text-slate-900 border-r border-slate-200 whitespace-nowrap bg-amber-50/30">
+                                  {row.name}
+                                </td>
+                                {activeGroups.map((g, idx) => {
+                                  const marginVal = getGroupMonthlyMarginForGroup(selectedYear, selectedMonth, g.compList);
+                                  const isNeg = Number(marginVal) < 0;
+                                  return (
+                                    <td
+                                      key={g.id}
+                                      className={`py-4 px-5 text-right border-r border-slate-200 tabular-nums font-black text-base whitespace-nowrap w-[220px] min-w-[220px] max-w-[220px] ${
+                                        idx % 2 === 1 ? 'bg-slate-100/80' : 'bg-white'
+                                      }`}
+                                    >
+                                      <span className={isNeg ? 'text-blue-600' : 'text-rose-600'}>
+                                        {marginVal}%
+                                      </span>
+                                    </td>
+                                  );
+                                })}
+                                {(() => {
+                                  const groupMargin = getGroupMonthlyMarginSum(selectedYear, selectedMonth);
+                                  const isNeg = Number(groupMargin) < 0;
+                                  return (
+                                    <td className="py-4 px-5 text-right tabular-nums font-black bg-[#e6f4ea] text-base whitespace-nowrap w-[220px] min-w-[220px] max-w-[220px] border-l border-emerald-300">
+                                      <span className={isNeg ? 'text-blue-600' : 'text-rose-600'}>
+                                        {groupMargin}%
+                                      </span>
+                                    </td>
+                                  );
+                                })()}
+                              </tr>
+                            );
+                          }
+
+                          if (row.isCalculated || row.id === 'op_profit') {
+                            const groupProfitTotal = getGroupMonthlyProfit(selectedYear, selectedMonth);
+                            return (
+                              <tr key={row.id} className="font-black text-base hover:bg-slate-100/50 transition whitespace-nowrap bg-purple-50/20">
+                                <td className="py-4 px-5 font-black text-purple-950 border-r border-slate-200 whitespace-nowrap bg-purple-100/40">
+                                  {row.name}
+                                </td>
+                                {activeGroups.map((g, idx) => {
+                                  const profit = getGroupMonthlyProfitForGroup(selectedYear, selectedMonth, g.compList);
+                                  return (
+                                    <td
+                                      key={g.id}
+                                      className={`py-4 px-5 text-right border-r border-slate-200 tabular-nums font-black text-base whitespace-nowrap w-[220px] min-w-[220px] max-w-[220px] ${
+                                        idx % 2 === 1 ? 'bg-slate-100/80' : 'bg-white'
+                                      }`}
+                                    >
+                                      <span className="text-slate-900">
+                                        {profit.toLocaleString()}
+                                      </span>
+                                    </td>
+                                  );
+                                })}
+                                <td className="py-4 px-5 text-right tabular-nums font-black text-slate-900 bg-[#e6f4ea] text-lg border-l border-emerald-300 whitespace-nowrap w-[220px] min-w-[220px] max-w-[220px]">
+                                  <span className="text-slate-900">
+                                    {groupProfitTotal.toLocaleString()}
+                                  </span>
+                                </td>
+                              </tr>
+                            );
+                          }
+
+                          const groupCompValues = activeGroups.map((g) => {
+                            if (row.id === 'income') return getGroupMonthlyIncomeForGroup(selectedYear, selectedMonth, g.compList);
+                            if (row.id === 'revenue') return getGroupMonthlyExpenseForGroup(selectedYear, selectedMonth, g.compList);
+                            return getGroupMonthlySumForGroup(selectedYear, selectedMonth, row.id, g.compList);
+                          });
+                          const totalSum = groupCompValues.reduce((a, b) => a + b, 0);
+
+                          return (
+                            <tr key={row.id} className="hover:bg-slate-100/50 transition text-base whitespace-nowrap">
+                              <td className="py-4 px-5 font-bold text-slate-900 border-r border-slate-200 whitespace-nowrap bg-white">
+                                {row.name}
+                              </td>
+                              {activeGroups.map((g, idx) => (
+                                <td
+                                  key={g.id}
+                                  className={`py-4 px-5 text-right border-r border-slate-200 tabular-nums font-bold text-black text-base whitespace-nowrap w-[220px] min-w-[220px] max-w-[220px] ${
+                                    idx % 2 === 1 ? 'bg-slate-100/80' : 'bg-white'
+                                  }`}
+                                >
+                                  {groupCompValues[idx].toLocaleString()}
+                                </td>
+                              ))}
+                              <td className="py-4 px-5 text-right tabular-nums font-black text-slate-900 bg-[#e6f4ea] text-lg border-l border-emerald-300 whitespace-nowrap w-[220px] min-w-[220px] max-w-[220px]">
+                                {totalSum.toLocaleString()}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </section>
 
