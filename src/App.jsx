@@ -330,50 +330,136 @@ export default function App() {
     }
   };
 
-  // 연산 유틸 (영업이익률: 영업이익 ÷ 매출액 × 100, 소수점 1자리)
-  const getMonthlyMargin = (year, comp, month) => {
+  // -------------------------------------------------------------
+  // 연산 유틸리티 함수 (수입, 지출합계, 손익, 손익률)
+  // -------------------------------------------------------------
+
+  // 1. 월별 수입
+  const getMonthlyIncome = (year, comp, month) => {
     const mData = matrixData?.[year]?.[comp]?.[month] || {};
+    if (mData['income'] !== undefined) return mData['income'];
     const rev = mData['revenue'] || 0;
     const profit = mData['op_profit'] || 0;
-    if (!rev || rev === 0) return '0.0';
-    return ((profit / rev) * 100).toFixed(1);
+    return rev + profit;
   };
 
-  const getYearlySum = (year, comp, rowId) => {
+  // 2. 월별 지출합계
+  const getMonthlyExpense = (year, comp, month) => {
+    const mData = matrixData?.[year]?.[comp]?.[month] || {};
+    return mData['revenue'] || 0;
+  };
+
+  // 3. 월별 손익 (수입 - 지출합계)
+  const getMonthlyProfit = (year, comp, month) => {
+    const inc = getMonthlyIncome(year, comp, month);
+    const exp = getMonthlyExpense(year, comp, month);
+    return inc - exp;
+  };
+
+  // 4. 월별 손익률 ((손익 ÷ 수입) × 100)
+  const getMonthlyMargin = (year, comp, month) => {
+    const inc = getMonthlyIncome(year, comp, month);
+    const profit = getMonthlyProfit(year, comp, month);
+    if (!inc || inc === 0) return '0.0';
+    return ((profit / inc) * 100).toFixed(1);
+  };
+
+  // 5. 회사별 연간 수입 합계
+  const getYearlyIncome = (year, comp) => {
     let sum = 0;
     for (let m = 1; m <= 12; m++) {
-      sum += matrixData?.[year]?.[comp]?.[m]?.[rowId] || 0;
+      sum += getMonthlyIncome(year, comp, m);
     }
     return sum;
   };
 
-  const getYTDSum = (year, comp, rowId, targetMonth) => {
+  // 6. 회사별 연간 지출합계
+  const getYearlyExpense = (year, comp) => {
     let sum = 0;
-    for (let m = 1; m <= targetMonth; m++) {
-      sum += matrixData?.[year]?.[comp]?.[m]?.[rowId] || 0;
+    for (let m = 1; m <= 12; m++) {
+      sum += getMonthlyExpense(year, comp, m);
     }
     return sum;
   };
 
-  const getYearlyMarginSum = (year, comp) => {
-    const revSum = getYearlySum(year, comp, 'revenue');
-    const profitSum = getYearlySum(year, comp, 'op_profit');
-    if (!revSum || revSum === 0) return '0.0';
-    return ((profitSum / revSum) * 100).toFixed(1);
+  // 7. 회사별 연간 손익 (수입 - 지출합계)
+  const getYearlyProfit = (year, comp) => {
+    return getYearlyIncome(year, comp) - getYearlyExpense(year, comp);
   };
 
+  // 8. 회사별 연간 손익률 ((손익 ÷ 수입) × 100)
+  const getYearlyMarginSum = (year, comp) => {
+    const incSum = getYearlyIncome(year, comp);
+    const profitSum = getYearlyProfit(year, comp);
+    if (!incSum || incSum === 0) return '0.0';
+    return ((profitSum / incSum) * 100).toFixed(1);
+  };
+
+  // 9. 전체 그룹 연간 수입 합계
+  const getGroupYearlyIncome = (year) => {
+    return companies.reduce((acc, c) => acc + getYearlyIncome(year, c), 0);
+  };
+
+  // 10. 전체 그룹 연간 지출합계
+  const getGroupYearlyExpense = (year) => {
+    return companies.reduce((acc, c) => acc + getYearlyExpense(year, c), 0);
+  };
+
+  // 11. 전체 그룹 연간 손익 (전체 수입 - 전체 지출합계)
+  const getGroupYearlyProfit = (year) => {
+    return getGroupYearlyIncome(year) - getGroupYearlyExpense(year);
+  };
+
+  // 12. 전체 그룹 연간 손익률 ((전체 손익 ÷ 전체 수입) × 100)
   const getGroupYearlyMarginSum = (year) => {
-    const totalRev = companies.reduce((acc, c) => acc + getYearlySum(year, c, 'revenue'), 0);
-    const totalProfit = companies.reduce((acc, c) => acc + getYearlySum(year, c, 'op_profit'), 0);
-    if (!totalRev || totalRev === 0) return '0.0';
-    return ((totalProfit / totalRev) * 100).toFixed(1);
+    const totalInc = getGroupYearlyIncome(year);
+    const totalProfit = getGroupYearlyProfit(year);
+    if (!totalInc || totalInc === 0) return '0.0';
+    return ((totalProfit / totalInc) * 100).toFixed(1);
+  };
+
+  // 13. 전체 그룹 월별 수입/지출/손익/손익률
+  const getGroupMonthlyIncome = (year, month) => {
+    return companies.reduce((acc, c) => acc + getMonthlyIncome(year, c, month), 0);
+  };
+
+  const getGroupMonthlyExpense = (year, month) => {
+    return companies.reduce((acc, c) => acc + getMonthlyExpense(year, c, month), 0);
+  };
+
+  const getGroupMonthlyProfit = (year, month) => {
+    return getGroupMonthlyIncome(year, month) - getGroupMonthlyExpense(year, month);
   };
 
   const getGroupMonthlyMarginSum = (year, month) => {
-    const totalRev = companies.reduce((acc, c) => acc + (matrixData?.[year]?.[c]?.[month]?.['revenue'] || 0), 0);
-    const totalProfit = companies.reduce((acc, c) => acc + (matrixData?.[year]?.[c]?.[month]?.['op_profit'] || 0), 0);
-    if (!totalRev || totalRev === 0) return '0.0';
-    return ((totalProfit / totalRev) * 100).toFixed(1);
+    const totalInc = getGroupMonthlyIncome(year, month);
+    const totalProfit = getGroupMonthlyProfit(year, month);
+    if (!totalInc || totalInc === 0) return '0.0';
+    return ((totalProfit / totalInc) * 100).toFixed(1);
+  };
+
+  // 14. 일반 행 연간 합계
+  const getYearlySum = (year, comp, rowId) => {
+    let sum = 0;
+    for (let m = 1; m <= 12; m++) {
+      if (rowId === 'income') sum += getMonthlyIncome(year, comp, m);
+      else if (rowId === 'revenue') sum += getMonthlyExpense(year, comp, m);
+      else if (rowId === 'op_profit') sum += getMonthlyProfit(year, comp, m);
+      else sum += matrixData?.[year]?.[comp]?.[m]?.[rowId] || 0;
+    }
+    return sum;
+  };
+
+  // 15. 일반 행 누적 (YTD) 합계
+  const getYTDSum = (year, comp, rowId, targetMonth) => {
+    let sum = 0;
+    for (let m = 1; m <= targetMonth; m++) {
+      if (rowId === 'income') sum += getMonthlyIncome(year, comp, m);
+      else if (rowId === 'revenue') sum += getMonthlyExpense(year, comp, m);
+      else if (rowId === 'op_profit') sum += getMonthlyProfit(year, comp, m);
+      else sum += matrixData?.[year]?.[comp]?.[m]?.[rowId] || 0;
+    }
+    return sum;
   };
 
   return (
