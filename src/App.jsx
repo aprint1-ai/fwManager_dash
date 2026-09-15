@@ -334,14 +334,10 @@ export default function App() {
   // 연산 유틸리티 함수 (수입, 지출합계, 손익, 손익률)
   // -------------------------------------------------------------
 
-  // 소수점 2자리 절사(반올림 없이 버림) 포맷터
+  // 소수점 셋째자리에서 반올림하여 둘째자리까지 표시 포맷터
   const formatMargin = (val) => {
     if (!val || isNaN(val) || !isFinite(val)) return '0.00';
-    const factor = 100;
-    const isNegative = val < 0;
-    const absVal = Math.abs(val);
-    const truncated = Math.floor(absVal * factor) / factor;
-    return (isNegative ? -truncated : truncated).toFixed(2);
+    return Number(val).toFixed(2);
   };
 
   // 1. 월별 수입
