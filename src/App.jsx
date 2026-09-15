@@ -671,14 +671,14 @@ export default function App() {
                                       idx % 2 === 1 ? 'bg-slate-100/80' : 'bg-white'
                                     }`}
                                   >
-                                    <span className={profit >= 0 ? 'text-slate-900' : 'text-rose-600'}>
+                                    <span className="text-slate-900">
                                       {profit.toLocaleString()}
                                     </span>
                                   </td>
                                 );
                               })}
                               <td className="py-4 px-5 text-right tabular-nums font-black text-slate-900 bg-[#e2ebf3] text-lg border-l border-slate-300 whitespace-nowrap min-w-[160px]">
-                                <span className={groupProfit >= 0 ? 'text-slate-900' : 'text-rose-600'}>
+                                <span className="text-slate-900">
                                   {groupProfit.toLocaleString()}
                                 </span>
                               </td>
@@ -813,14 +813,14 @@ export default function App() {
                                       idx % 2 === 1 ? 'bg-slate-100/80' : 'bg-white'
                                     }`}
                                   >
-                                    <span className={profit >= 0 ? 'text-slate-900' : 'text-rose-600'}>
+                                    <span className="text-slate-900">
                                       {profit.toLocaleString()}
                                     </span>
                                   </td>
                                 );
                               })}
                               <td className="py-4 px-5 text-right tabular-nums font-black text-slate-900 bg-[#e2ebf3] text-lg border-l border-slate-300 whitespace-nowrap min-w-[160px]">
-                                <span className={groupProfit >= 0 ? 'text-slate-900' : 'text-rose-600'}>
+                                <span className="text-slate-900">
                                   {groupProfit.toLocaleString()}
                                 </span>
                               </td>
@@ -1068,14 +1068,14 @@ export default function App() {
                                 const profitVal = getMonthlyProfit(selectedYear, selectedCompany, m);
                                 return (
                                   <td key={m} className="py-4 px-3 text-right border-r border-slate-200 tabular-nums font-black text-base bg-purple-50/30 min-w-[150px] w-[150px] whitespace-nowrap">
-                                    <span className={profitVal >= 0 ? 'text-slate-900' : 'text-rose-600'}>
+                                    <span className="text-slate-900">
                                       {profitVal.toLocaleString()}
                                     </span>
                                   </td>
                                 );
                               })}
                               <td className="py-4 px-4 text-right tabular-nums font-black text-purple-950 bg-purple-100/70 text-base min-w-[180px] w-[180px] whitespace-nowrap">
-                                <span className={yearlyProfit >= 0 ? 'text-slate-900' : 'text-rose-600'}>
+                                <span className="text-slate-900">
                                   {yearlyProfit.toLocaleString()}
                                 </span>
                               </td>
