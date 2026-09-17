@@ -36,7 +36,7 @@ const db = getFirestore(app);
 const docRef = doc(db, 'fwManage_dash', 'mainData');
 
 // 기본 등록 회사 목록
-const INITIAL_COMPANIES = ['푸드윈', '파인쿡', '에이프린트', '코리아프린테크', '진농'];
+const INITIAL_COMPANIES = ['푸드윈', '파인쿡', '에이프린트', '프린테크', '진농'];
 
 // 기본 지표 목록
 const INITIAL_ROWS = [
@@ -50,8 +50,8 @@ const INITIAL_ROWS = [
 const COMPANY_GROUPS_DEF = [
   {
     id: 'foodwin',
-    title: '푸드윈',
-    subTitle: '(본사, 광주, 군포, 급식프로)',
+    title: '푸드윈 본사, 광주, 군포, 급식프로',
+    subTitle: null,
     match: (c) => c.includes('푸드윈') || c.includes('급식프로')
   },
   {
@@ -62,8 +62,8 @@ const COMPANY_GROUPS_DEF = [
   },
   {
     id: 'aprint',
-    title: '인쇄파트',
-    subTitle: '(에이프린트, 코리아프린테크)',
+    title: '에이프린트, 프린테크',
+    subTitle: null,
     match: (c) => c.includes('에이프린트') || c.includes('프린테크')
   },
   {
@@ -79,7 +79,7 @@ const INITIAL_MEMOS = {
   '푸드윈': '25년 대비 특판 포장 선물세트 출고량 급증',
   '파인쿡': '부스터 북 정기 교재 및 단체 키트 납품 확대',
   '에이프린트': '디지털 소량 할인 배너 프로모션 진행 중',
-  '코리아프린테크': '신규 프랜차이즈 용기 계약 체결 완료',
+  '프린테크': '신규 프랜차이즈 용기 계약 체결 완료',
   '진농': '원자재 가격 안정화로 이익률 개선',
 };
 
@@ -92,7 +92,7 @@ const generateInitialMatrix = () => {
     '푸드윈': { 2025: 110389455, 2026: 99767636 },
     '파인쿡': { 2025: 68419592, 2026: 83951091 },
     '에이프린트': { 2025: 45210000, 2026: 52100000 },
-    '코리아프린테크': { 2025: 38100000, 2026: 41200000 },
+    '프린테크': { 2025: 38100000, 2026: 41200000 },
     '진농': { 2025: 29500000, 2026: 34800000 },
   };
 
@@ -148,8 +148,28 @@ export default function App() {
     const unsubscribe = onSnapshot(docRef, (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
-        if (data.matrixData) setMatrixData(data.matrixData);
-        if (data.companies) setCompanies(data.companies);
+        if (data.companies) {
+          const sanitizedComps = data.companies.map((c) => (c === '코리아프린테크' ? '프린테크' : c));
+          setCompanies(sanitizedComps);
+        }
+        if (data.matrixData) {
+          const sanitizedMatrix = JSON.parse(JSON.stringify(data.matrixData));
+          [2025, 2026].forEach((y) => {
+            if (sanitizedMatrix[y] && sanitizedMatrix[y]['코리아프린테크']) {
+              sanitizedMatrix[y]['프린테크'] = sanitizedMatrix[y]['코리아프린테크'];
+              delete sanitizedMatrix[y]['코리아프린테크'];
+            }
+          });
+          setMatrixData(sanitizedMatrix);
+        }
+        if (data.companyMemos) {
+          const sanitizedMemos = { ...data.companyMemos };
+          if (sanitizedMemos['코리아프린테크']) {
+            sanitizedMemos['프린테크'] = sanitizedMemos['코리아프린테크'];
+            delete sanitizedMemos['코리아프린테크'];
+          }
+          setCompanyMemos(sanitizedMemos);
+        }
         if (data.rows) {
           let updatedRows = [...data.rows];
           if (!updatedRows.some((r) => r.id === 'income')) {
