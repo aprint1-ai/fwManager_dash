@@ -242,7 +242,6 @@ export default function App() {
     };
 
     setMatrixData(newMatrix);
-    saveToFirestore(newMatrix, null, null, null);
   };
 
   // 메모 수정
@@ -252,7 +251,6 @@ export default function App() {
       [comp]: text
     };
     setCompanyMemos(newMemos);
-    saveToFirestore(null, null, null, newMemos);
   };
 
   // 회사 추가 / 수정 / 삭제
