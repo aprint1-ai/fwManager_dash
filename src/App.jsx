@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { initializeApp } from 'firebase/app';
-import { getFirestore, doc, setDoc, onSnapshot } from 'firebase/firestore';
+import { getFirestore, doc, setDoc, onSnapshot, deleteField } from 'firebase/firestore';
 import {
   LayoutDashboard,
   Database,
@@ -156,7 +156,9 @@ export default function App() {
           const sanitizedMatrix = JSON.parse(JSON.stringify(data.matrixData));
           [2025, 2026].forEach((y) => {
             if (sanitizedMatrix[y] && sanitizedMatrix[y]['코리아프린테크']) {
-              sanitizedMatrix[y]['프린테크'] = sanitizedMatrix[y]['코리아프린테크'];
+              if (!sanitizedMatrix[y]['프린테크']) {
+                sanitizedMatrix[y]['프린테크'] = sanitizedMatrix[y]['코리아프린테크'];
+              }
               delete sanitizedMatrix[y]['코리아프린테크'];
             }
           });
@@ -165,7 +167,9 @@ export default function App() {
         if (data.companyMemos) {
           const sanitizedMemos = { ...data.companyMemos };
           if (sanitizedMemos['코리아프린테크']) {
-            sanitizedMemos['프린테크'] = sanitizedMemos['코리아프린테크'];
+            if (!sanitizedMemos['프린테크']) {
+              sanitizedMemos['프린테크'] = sanitizedMemos['코리아프린테크'];
+            }
             delete sanitizedMemos['코리아프린테크'];
           }
           setCompanyMemos(sanitizedMemos);
@@ -184,7 +188,6 @@ export default function App() {
           });
           setRows(sanitizedRows);
         }
-        if (data.companyMemos) setCompanyMemos(data.companyMemos);
         setSyncStatus('클라우드 연결됨');
       } else {
         const initialMatrix = generateInitialMatrix();
@@ -209,11 +212,25 @@ export default function App() {
   const saveToFirestore = async (newMatrix, newComps, newRows, newMemos) => {
     try {
       setSyncStatus('저장 중...');
+      const targetMatrix = JSON.parse(JSON.stringify(newMatrix || matrixData));
+      const targetMemos = { ...(newMemos || companyMemos) };
+      const targetComps = (newComps || companies).map(c => c === '코리아프린테크' ? '프린테크' : c);
+
+      [2025, 2026].forEach((y) => {
+        if (targetMatrix[y] && targetMatrix[y]['코리아프린테크']) {
+          delete targetMatrix[y]['코리아프린테크'];
+        }
+      });
+      delete targetMemos['코리아프린테크'];
+
       await setDoc(docRef, {
-        matrixData: newMatrix || matrixData,
-        companies: newComps || companies,
+        matrixData: targetMatrix,
+        companies: targetComps,
         rows: newRows || rows,
-        companyMemos: newMemos || companyMemos,
+        companyMemos: targetMemos,
+        'matrixData.2025.코리아프린테크': deleteField(),
+        'matrixData.2026.코리아프린테크': deleteField(),
+        'companyMemos.코리아프린테크': deleteField(),
         lastUpdated: new Date().toISOString()
       }, { merge: true });
       setSyncStatus('클라우드 연결됨');
